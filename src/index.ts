@@ -106,7 +106,7 @@ const resolvers = {
       return book;
     },
     deleteBook(_, { id }) {
-      return cache.delete(id);
+      return cache.set(id, undefined);
     },
   },
 };
