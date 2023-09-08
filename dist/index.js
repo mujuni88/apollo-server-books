@@ -74,7 +74,11 @@ const resolvers = {
     Query: {
         books: (_, args) => {
             const books = [];
-            cache.forEach((book, id) => books.push({ ...book, id }));
+            cache.forEach((book, id) => {
+                if (!book)
+                    return;
+                books.push({ ...book, id });
+            });
             if (args.filter && args.filter.category) {
                 const filterCategory = args.filter.category.toUpperCase();
                 return books.filter((book) => book.categories.map((c) => c.toUpperCase()).includes(filterCategory));
@@ -82,7 +86,7 @@ const resolvers = {
             return books;
         },
         book: (_, { id }) => {
-            return { id, ...cache.get(id) };
+            return cache.get(id);
         },
     },
     Mutation: {
@@ -93,6 +97,8 @@ const resolvers = {
             return book;
         },
         updateBook: (_, { title, id, categories }) => {
+            if (!title)
+                return;
             const book = { title, categories, id };
             cache.set(id, book);
             return book;
