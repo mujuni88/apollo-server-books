@@ -1,6 +1,6 @@
-# To-do list example server
+# Library of books example server
 
-This sample demonstrates a basic to-do list backend using Apollo Server. The React application in `todo-list-client` communicates with this server.
+This sample demonstrates a basic library backend using Apollo Server. The React application in `apollo-client-books` communicates with this server.
 
 ## Run locally
 
