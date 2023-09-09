@@ -1,6 +1,6 @@
 # Library of books example server
 
-This sample demonstrates a basic library backend using Apollo Server. The React application in `apollo-client-books` communicates with this server.
+This sample demonstrates a basic library backend using Apollo Server. The React application in [apollo-client-books](https://codesandbox.io/p/github/mujuni88/apollo-client-books/main) communicates with this server.
 
 ## Run locally
 
