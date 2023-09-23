@@ -1,36 +1,43 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import LRU from "lru-cache";
+var Category;
+(function (Category) {
+    Category["FICTION"] = "FICTION";
+    Category["NON_FICTION"] = "NON_FICTION";
+    Category["BIOGRAPHY"] = "BIOGRAPHY";
+    Category["SPORTS"] = "SPORTS";
+})(Category || (Category = {}));
 const books = [
-    { title: "To Kill a Mockingbird", categories: ["FICTION"] },
-    { title: "1984", categories: ["FICTION"] },
-    { title: "Harry Potter and the Sorcerer's Stone", categories: ["FICTION"] },
-    { title: "The Great Gatsby", categories: ["FICTION"] },
-    { title: "The Diary of a Young Girl", categories: ["BIOGRAPHY"] },
-    { title: "The Catcher in the Rye", categories: ["FICTION"] },
-    { title: "Pride and Prejudice", categories: ["FICTION"] },
-    { title: "The Hobbit", categories: ["FICTION"] },
-    { title: "Moby Dick", categories: ["FICTION"] },
-    { title: "War and Peace", categories: ["FICTION"] },
-    { title: "The Odyssey", categories: ["FICTION"] },
-    { title: "The Art of War", categories: ["NON-FICTION"] },
-    { title: "A Brief History of Time", categories: ["NON-FICTION"] },
-    { title: "The God Delusion", categories: ["NON-FICTION"] },
+    { title: "To Kill a Mockingbird", categories: [Category.FICTION] },
+    { title: "1984", categories: [Category.FICTION] },
+    { title: "Harry Potter and the Sorcerer's Stone", categories: [Category.FICTION] },
+    { title: "The Great Gatsby", categories: [Category.FICTION] },
+    { title: "The Diary of a Young Girl", categories: [Category.BIOGRAPHY] },
+    { title: "The Catcher in the Rye", categories: [Category.FICTION] },
+    { title: "Pride and Prejudice", categories: [Category.FICTION] },
+    { title: "The Hobbit", categories: [Category.FICTION] },
+    { title: "Moby Dick", categories: [Category.FICTION] },
+    { title: "War and Peace", categories: [Category.FICTION] },
+    { title: "The Odyssey", categories: [Category.FICTION] },
+    { title: "The Art of War", categories: [Category.NON_FICTION] },
+    { title: "A Brief History of Time", categories: [Category.NON_FICTION] },
+    { title: "The God Delusion", categories: [Category.NON_FICTION] },
     {
         title: "Sapiens: A Brief History of Humankind",
-        categories: ["NON-FICTION"],
+        categories: [Category.NON_FICTION],
     },
-    { title: "Steve Jobs", categories: ["BIOGRAPHY"] },
-    { title: "Long Walk to Freedom", categories: ["BIOGRAPHY"] },
+    { title: "Steve Jobs", categories: [Category.BIOGRAPHY] },
+    { title: "Long Walk to Freedom", categories: [Category.BIOGRAPHY] },
     {
         title: "The Autobiography of Martin Luther King, Jr.",
-        categories: ["BIOGRAPHY"],
+        categories: [Category.BIOGRAPHY],
     },
     {
         title: "Moneyball: The Art of Winning an Unfair Game",
-        categories: ["SPORTS"],
+        categories: [Category.SPORTS],
     },
-    { title: "Open: An Autobiography", categories: ["BIOGRAPHY", "SPORTS"] },
+    { title: "Open: An Autobiography", categories: [Category.BIOGRAPHY, Category.SPORTS] },
 ];
 const cache = LRU({ max: 25, maxAge: 1000 * 60 * 5 });
 export const generateIdFromTitle = (title) => title.split(" ").join("-").toLocaleLowerCase();
