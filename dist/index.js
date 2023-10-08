@@ -51,7 +51,7 @@ export const genBookId = (title) => BOOK_PREFIX +
         .join("")
         .toLocaleLowerCase();
 export const genCategoryId = (name) => CATEGORY_PREFIX +
-    name.split(" ").join("-").toLocaleLowerCase().startsWith("cat-");
+    name.split(" ").join("-").toLocaleLowerCase();
 // Preload the cache with the books
 books.forEach(({ id, title, categories }) => {
     cache.set(id, { title, categories, id });
@@ -76,6 +76,11 @@ input BookFilter {
   categoryId: String
 } 
 
+input CategoryInput {
+  id: String!
+  name: String!
+}
+
 type Query {
   books(filter: BookFilter): [Book]
   book(id: String!): Book
@@ -84,8 +89,8 @@ type Query {
 }
 
 type Mutation {
-  addBook(title: String!, categoryIds: [String!]): Book
-  updateBook(id: String!, title: String!, categoryIds: [String!]): Book
+  addBook(title: String!, categories: [CategoryInput]): Book
+  updateBook(id: String!, title: String!, categories: [CategoryInput]): Book
   deleteBook(id: String!): Boolean
 
   addCategory(name: String!): Category
@@ -142,16 +147,16 @@ const resolvers = {
         deleteBook(_, { id }) {
             return cache.set(id, undefined);
         },
-        addCategory: (_, { title }) => {
-            const id = genCategoryId(title);
-            const category = { title, id };
+        addCategory: (_, { name }) => {
+            const id = genCategoryId(name);
+            const category = { name, id };
             cache.set(id, category);
             return category;
         },
-        updateCategory: (_, { title, id }) => {
-            if (!title)
+        updateCategory: (_, { name, id }) => {
+            if (!name)
                 return;
-            const category = { title, id };
+            const category = { name, id };
             cache.set(id, category);
             return category;
         },
