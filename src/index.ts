@@ -57,8 +57,33 @@ export const genBookId = (title: string) =>
     .toLocaleLowerCase();
 
 export const genCategoryId = (name: string) =>
-  CATEGORY_PREFIX +
-  name.split(" ").join("-").toLocaleLowerCase();
+  CATEGORY_PREFIX + name.split(" ").join("-").toLocaleLowerCase();
+
+// Function to remove a category from all books
+const removeCategoryFromBooks = (categoryId: string) => {
+  const booksToUpdate: any[] = [];
+
+  cache.forEach((book, bookId) => {
+    if (!book || !bookId.startsWith(BOOK_PREFIX)) return;
+
+    const updatedCategories = book.categories.filter(
+      (category) => category.id !== categoryId,
+    );
+
+    if (updatedCategories.length !== book.categories.length) {
+      booksToUpdate.push({
+        ...book,
+        id: bookId,
+        categories: updatedCategories,
+      });
+    }
+  });
+
+  // Update the books in the cache
+  booksToUpdate.forEach((updatedBook) => {
+    cache.set(updatedBook.id, updatedBook);
+  });
+};
 
 // Preload the cache with the books
 books.forEach(({ id, title, categories }) => {
@@ -173,7 +198,9 @@ const resolvers = {
       return category;
     },
     deleteCategory(_, { id }) {
-      return cache.set(id, undefined);
+      cache.set(id, undefined);
+      removeCategoryFromBooks(id);
+      return true;
     },
   },
 };
