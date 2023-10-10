@@ -71,13 +71,29 @@ const removeCategoryFromBooks = (categoryId) => {
         cache.set(updatedBook.id, updatedBook);
     });
 };
-// Preload the cache with the books
-books.forEach(({ id, title, categories }) => {
-    cache.set(id, { title, categories, id });
-});
-categories.forEach(({ id, name }) => {
-    cache.set(id, { id, name });
-});
+// Function to populate books to cache
+const populateBooksToCache = () => {
+    const cachedBooks = [];
+    books.forEach(({ id, title, categories }) => {
+        const book = { id, title, categories };
+        cache.set(id, book);
+        cachedBooks.push(book);
+    });
+    return cachedBooks;
+};
+// Function to populate categories to cache
+const populateCategoriesToCache = () => {
+    const cachedCategories = [];
+    categories.forEach(({ id, name }) => {
+        const category = { id, name };
+        cache.set(id, category);
+        cachedCategories.push(category);
+    });
+    return cachedCategories;
+};
+// Seed Data
+populateBooksToCache();
+populateCategoriesToCache();
 // Schema definition
 const typeDefs = `
 type Category {
@@ -89,6 +105,11 @@ type Book {
   id: String!
   title: String!
   categories: [Category]
+}
+
+type SeedData {
+  books: [Book]!
+  categories: [Category]!
 }
 
 input BookFilter {
@@ -115,6 +136,8 @@ type Mutation {
   addCategory(name: String!): Category
   updateCategory(id: String!, name: String!): Category
   deleteCategory(id: String!): Boolean
+
+  seedData(filter:String): SeedData
 }
 `;
 // Resolver definitions
@@ -183,6 +206,14 @@ const resolvers = {
             cache.set(id, undefined);
             removeCategoryFromBooks(id);
             return true;
+        },
+        seedData(_) {
+            const books = populateBooksToCache();
+            const categories = populateCategoriesToCache();
+            return {
+                books,
+                categories,
+            };
         },
     },
 };
