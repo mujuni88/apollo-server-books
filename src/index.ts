@@ -1,52 +1,23 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import LRU from "lru-cache";
+import { LRUCache } from "typescript-lru-cache";
+import { categories, books, Book, Category } from "./data";
 
 const BOOK_PREFIX = "book-";
 const CATEGORY_PREFIX = "cat-";
 
-const categories = [
-  { id: "cat-fiction", name: "Fiction" },
-  { id: "cat-non-fiction", name: "Non Fiction" },
-  { id: "cat-biography", name: "Biography" },
-  { id: "cat-sports", name: "Sports" },
-  { id: "cat-science", name: "Science" },
-  { id: "cat-history", name: "History" },
-];
-const books = [
-  {
-    id: "book-tkmb",
-    title: "To Kill a Mockingbird",
-    categories: [categories[0]],
-  },
-  {
-    id: "book-hpss",
-    title: "Harry Potter and the Sorcerer's Stone",
-    categories: [categories[0]],
-  },
-  {
-    id: "book-1984",
-    title: "1984",
-    categories: [categories[0]],
-  },
-  {
-    id: "book-sapiens",
-    title: "Sapiens: A Brief History of Humankind",
-    categories: [categories[1]],
-  },
-  {
-    id: "book-mlk",
-    title: "The Autobiography of Martin Luther King, Jr.",
-    categories: [categories[2]],
-  },
-  {
-    id: "book-mjsm",
-    title: "Michael Jordan: The Life",
-    categories: [categories[3]],
-  },
-];
-
-const cache = LRU({ max: 25, maxAge: 1000 * 60 * 5 });
+const cache = new LRUCache<string, Book | Category>({
+  maxSize: 100,
+  entryExpirationTimeInMS: 5000,
+  onEntryEvicted: ({ key, value, isExpired }) =>
+    console.log(
+      `Entry with key ${key} and value ${value} was evicted from the cache. Expired: ${isExpired}`,
+    ),
+  onEntryMarkedAsMostRecentlyUsed: ({ key, value }) =>
+    console.log(
+      `Entry with key ${key} and value ${value} was just marked as most recently used.`,
+    ),
+});
 
 export const genBookId = (title: string) =>
   BOOK_PREFIX +
@@ -64,13 +35,13 @@ const removeCategoryFromBooks = (categoryId: string) => {
   const booksToUpdate: any[] = [];
 
   cache.forEach((book, bookId) => {
-    if (!book || !bookId.startsWith(BOOK_PREFIX)) return;
+    if ("name" in book) return;
 
-    const updatedCategories = book.categories.filter(
+    const updatedCategories = (book.categories ?? []).filter(
       (category) => category.id !== categoryId,
     );
 
-    if (updatedCategories.length !== book.categories.length) {
+    if (updatedCategories.length !== (book.categories ?? []).length) {
       booksToUpdate.push({
         ...book,
         id: bookId,
@@ -87,7 +58,7 @@ const removeCategoryFromBooks = (categoryId: string) => {
 
 // Function to populate books to cache
 const populateBooksToCache = () => {
-  const cachedBooks = [];
+  const cachedBooks: Book[] = [];
   books.forEach(({ id, title, categories }) => {
     const book = { id, title, categories };
     cache.set(id, book);
@@ -98,7 +69,7 @@ const populateBooksToCache = () => {
 
 // Function to populate categories to cache
 const populateCategoriesToCache = () => {
-  const cachedCategories = [];
+  const cachedCategories: Category[] = [];
   categories.forEach(({ id, name }) => {
     const category = { id, name };
     cache.set(id, category);
@@ -158,75 +129,96 @@ type Mutation {
 }
 `;
 // Resolver definitions
+type BookFilter = {
+  filter: {
+    categoryId: string;
+  };
+};
+
+type BookInput = {
+  id: string;
+  title: string;
+  categories?: Category[];
+};
+
+type CategoryInput = {
+  id: string;
+  name: string;
+};
+
+type IdArg = {
+  id: string;
+};
+
 const resolvers = {
   Query: {
-    books: (_, args) => {
-      const books = [];
+    books: (_: any, args: BookFilter) => {
+      const books: Book[] = [];
 
       cache.forEach((book, id) => {
-        if (!book || !id.startsWith(BOOK_PREFIX)) return;
+        if ("name" in book) return;
         books.push({ ...book, id });
       });
 
-      if (args.filter && args.filter.category) {
-        const categoryId = genCategoryId(args.filter.category);
+      if (args.filter && args.filter.categoryId) {
+        const categoryId = genCategoryId(args.filter.categoryId);
         return books.filter((book) =>
-          book.categories.map((c) => c.id === categoryId),
+          (book?.categories ?? []).map((c) => c.id === categoryId),
         );
       }
 
       return books;
     },
-    book: (_, { id }) => {
+    book: (_: any, { id }: IdArg) => {
       return cache.get(id);
     },
-    categories: (_, args) => {
-      const categories = [];
+    categories: (_: any, args: any) => {
+      const categories: Category[] = [];
 
       cache.forEach((category, id) => {
-        if (!category || !id.startsWith(CATEGORY_PREFIX)) return;
+        if ("title" in category) return;
         categories.push({ ...category, id });
       });
       return categories;
     },
-    category: (_, { id }) => {
+    category: (_: any, { id }: IdArg) => {
       return cache.get(id);
     },
   },
   Mutation: {
-    addBook: (_, { title, categories }) => {
+    addBook: (_: any, { title, categories }: Omit<BookInput, "id">) => {
       const id = genBookId(title);
-      const book = { title, categories, id };
+      const book: Book = { title, categories, id };
       cache.set(id, book);
       return book;
     },
-    updateBook: (_, { title, id, categories }) => {
+    updateBook: (_: any, { title, id, categories }: BookInput) => {
       if (!title) return;
       const book = { title, categories, id };
       cache.set(id, book);
       return book;
     },
-    deleteBook(_, { id }) {
-      return cache.set(id, undefined);
+    deleteBook(_: any, { id }: IdArg) {
+      return cache.delete(id);
     },
-    addCategory: (_, { name }) => {
+    addCategory: (_: any, { name }: Omit<CategoryInput, "id">) => {
       const id = genCategoryId(name);
       const category = { name, id };
       cache.set(id, category);
       return category;
     },
-    updateCategory: (_, { name, id }) => {
+    updateCategory: (_: any, { name, id }: CategoryInput) => {
       if (!name) return;
       const category = { name, id };
       cache.set(id, category);
       return category;
     },
-    deleteCategory(_, { id }) {
-      cache.set(id, undefined);
+    deleteCategory(_: any, { id }: IdArg) {
+      cache.delete(id);
       removeCategoryFromBooks(id);
       return true;
     },
-    seedData(_) {
+    seedData(_: any) {
       const books = populateBooksToCache();
       const categories = populateCategoriesToCache();
       return {
@@ -238,8 +230,9 @@ const resolvers = {
 };
 
 const server = new ApolloServer({ typeDefs, resolvers });
-const { url } = await startStandaloneServer(server, {
+startStandaloneServer(server, {
   context: async ({ req }) => ({ token: req.headers.token }),
   listen: { port: 4000 },
+}).then(({ url }) => {
+  console.log(`🚀  Server ready at ${url}`);
 });
-console.log(`🚀  Server ready at ${url}`);

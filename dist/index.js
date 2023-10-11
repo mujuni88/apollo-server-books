@@ -1,56 +1,34 @@
-import { ApolloServer } from "@apollo/server";
-import { startStandaloneServer } from "@apollo/server/standalone";
-import LRU from "lru-cache";
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.genCategoryId = exports.genBookId = void 0;
+const server_1 = require("@apollo/server");
+const standalone_1 = require("@apollo/server/standalone");
+const lru_cache_1 = __importDefault(require("lru-cache"));
+const data_1 = require("./data");
 const BOOK_PREFIX = "book-";
 const CATEGORY_PREFIX = "cat-";
-const categories = [
-    { id: "cat-fiction", name: "Fiction" },
-    { id: "cat-non-fiction", name: "Non Fiction" },
-    { id: "cat-biography", name: "Biography" },
-    { id: "cat-sports", name: "Sports" },
-    { id: "cat-science", name: "Science" },
-    { id: "cat-history", name: "History" },
-];
-const books = [
-    {
-        id: "book-tkmb",
-        title: "To Kill a Mockingbird",
-        categories: [categories[0]],
-    },
-    {
-        id: "book-hpss",
-        title: "Harry Potter and the Sorcerer's Stone",
-        categories: [categories[0]],
-    },
-    {
-        id: "book-1984",
-        title: "1984",
-        categories: [categories[0]],
-    },
-    {
-        id: "book-sapiens",
-        title: "Sapiens: A Brief History of Humankind",
-        categories: [categories[1]],
-    },
-    {
-        id: "book-mlk",
-        title: "The Autobiography of Martin Luther King, Jr.",
-        categories: [categories[2]],
-    },
-    {
-        id: "book-mjsm",
-        title: "Michael Jordan: The Life",
-        categories: [categories[3]],
-    },
-];
-const cache = LRU({ max: 25, maxAge: 1000 * 60 * 5 });
-export const genBookId = (title) => BOOK_PREFIX +
+const cache = (0, lru_cache_1.default)({ max: 25, maxAge: 1000 * 60 * 5 });
+const genBookId = (title) => BOOK_PREFIX +
     title
         .split(" ")
         .map((t) => t[0])
         .join("")
         .toLocaleLowerCase();
-export const genCategoryId = (name) => CATEGORY_PREFIX + name.split(" ").join("-").toLocaleLowerCase();
+exports.genBookId = genBookId;
+const genCategoryId = (name) => CATEGORY_PREFIX + name.split(" ").join("-").toLocaleLowerCase();
+exports.genCategoryId = genCategoryId;
 // Function to remove a category from all books
 const removeCategoryFromBooks = (categoryId) => {
     const booksToUpdate = [];
@@ -59,11 +37,7 @@ const removeCategoryFromBooks = (categoryId) => {
             return;
         const updatedCategories = book.categories.filter((category) => category.id !== categoryId);
         if (updatedCategories.length !== book.categories.length) {
-            booksToUpdate.push({
-                ...book,
-                id: bookId,
-                categories: updatedCategories,
-            });
+            booksToUpdate.push(Object.assign(Object.assign({}, book), { id: bookId, categories: updatedCategories }));
         }
     });
     // Update the books in the cache
@@ -74,7 +48,7 @@ const removeCategoryFromBooks = (categoryId) => {
 // Function to populate books to cache
 const populateBooksToCache = () => {
     const cachedBooks = [];
-    books.forEach(({ id, title, categories }) => {
+    data_1.books.forEach(({ id, title, categories }) => {
         const book = { id, title, categories };
         cache.set(id, book);
         cachedBooks.push(book);
@@ -84,7 +58,7 @@ const populateBooksToCache = () => {
 // Function to populate categories to cache
 const populateCategoriesToCache = () => {
     const cachedCategories = [];
-    categories.forEach(({ id, name }) => {
+    data_1.categories.forEach(({ id, name }) => {
         const category = { id, name };
         cache.set(id, category);
         cachedCategories.push(category);
@@ -148,10 +122,10 @@ const resolvers = {
             cache.forEach((book, id) => {
                 if (!book || !id.startsWith(BOOK_PREFIX))
                     return;
-                books.push({ ...book, id });
+                books.push(Object.assign(Object.assign({}, book), { id }));
             });
             if (args.filter && args.filter.category) {
-                const categoryId = genCategoryId(args.filter.category);
+                const categoryId = (0, exports.genCategoryId)(args.filter.category);
                 return books.filter((book) => book.categories.map((c) => c.id === categoryId));
             }
             return books;
@@ -164,7 +138,7 @@ const resolvers = {
             cache.forEach((category, id) => {
                 if (!category || !id.startsWith(CATEGORY_PREFIX))
                     return;
-                categories.push({ ...category, id });
+                categories.push(Object.assign(Object.assign({}, category), { id }));
             });
             return categories;
         },
@@ -174,7 +148,7 @@ const resolvers = {
     },
     Mutation: {
         addBook: (_, { title, categories }) => {
-            const id = genBookId(title);
+            const id = (0, exports.genBookId)(title);
             const book = { title, categories, id };
             cache.set(id, book);
             return book;
@@ -190,7 +164,7 @@ const resolvers = {
             return cache.set(id, undefined);
         },
         addCategory: (_, { name }) => {
-            const id = genCategoryId(name);
+            const id = (0, exports.genCategoryId)(name);
             const category = { name, id };
             cache.set(id, category);
             return category;
@@ -217,9 +191,10 @@ const resolvers = {
         },
     },
 };
-const server = new ApolloServer({ typeDefs, resolvers });
-const { url } = await startStandaloneServer(server, {
-    context: async ({ req }) => ({ token: req.headers.token }),
+const server = new server_1.ApolloServer({ typeDefs, resolvers });
+(0, standalone_1.startStandaloneServer)(server, {
+    context: ({ req }) => __awaiter(void 0, void 0, void 0, function* () { return ({ token: req.headers.token }); }),
     listen: { port: 4000 },
+}).then(({ url }) => {
+    console.log(`🚀  Server ready at ${url}`);
 });
-console.log(`🚀  Server ready at ${url}`);

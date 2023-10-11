@@ -1,32 +1,43 @@
-// Define an array with book details
-export const books = [
-    { title: "To Kill a Mockingbird", categories: ["FICTION"] },
-    { title: "1984", categories: ["FICTION"] },
-    { title: "Harry Potter and the Sorcerer's Stone", categories: ["FICTION"] },
-    { title: "The Great Gatsby", categories: ["FICTION"] },
-    { title: "The Diary of a Young Girl", categories: ["BIOGRAPHY"] },
-    { title: "The Catcher in the Rye", categories: ["FICTION"] },
-    { title: "Pride and Prejudice", categories: ["FICTION"] },
-    { title: "The Hobbit", categories: ["FICTION"] },
-    { title: "Moby Dick", categories: ["FICTION"] },
-    { title: "War and Peace", categories: ["FICTION"] },
-    { title: "The Odyssey", categories: ["FICTION"] },
-    { title: "The Art of War", categories: ["NON-FICTION"] },
-    { title: "A Brief History of Time", categories: ["NON-FICTION"] },
-    { title: "The God Delusion", categories: ["NON-FICTION"] },
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.books = exports.categories = void 0;
+exports.categories = [
+    { id: "cat-fiction", name: "Fiction" },
+    { id: "cat-non-fiction", name: "Non Fiction" },
+    { id: "cat-biography", name: "Biography" },
+    { id: "cat-sports", name: "Sports" },
+    { id: "cat-science", name: "Science" },
+    { id: "cat-history", name: "History" },
+];
+exports.books = [
     {
+        id: "book-tkmb",
+        title: "To Kill a Mockingbird",
+        categories: [exports.categories[0]],
+    },
+    {
+        id: "book-hpss",
+        title: "Harry Potter and the Sorcerer's Stone",
+        categories: [exports.categories[0]],
+    },
+    {
+        id: "book-1984",
+        title: "1984",
+        categories: [exports.categories[0]],
+    },
+    {
+        id: "book-sapiens",
         title: "Sapiens: A Brief History of Humankind",
-        categories: ["NON-FICTION"],
+        categories: [exports.categories[1]],
     },
-    { title: "Steve Jobs", categories: ["BIOGRAPHY"] },
-    { title: "Long Walk to Freedom", categories: ["BIOGRAPHY"] },
     {
+        id: "book-mlk",
         title: "The Autobiography of Martin Luther King, Jr.",
-        categories: ["BIOGRAPHY"],
+        categories: [exports.categories[2]],
     },
     {
-        title: "Moneyball: The Art of Winning an Unfair Game",
-        categories: ["SPORTS"],
+        id: "book-mjsm",
+        title: "Michael Jordan: The Life",
+        categories: [exports.categories[3]],
     },
-    { title: "Open: An Autobiography", categories: ["BIOGRAPHY", "SPORTS"] },
 ];
