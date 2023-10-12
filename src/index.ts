@@ -1,82 +1,14 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import { LRUCache } from "typescript-lru-cache";
-import { categories, books, Book, Category } from "./data";
-
-const BOOK_PREFIX = "book-";
-const CATEGORY_PREFIX = "cat-";
-
-const cache = new LRUCache<string, Book | Category>({
-  maxSize: 100,
-  entryExpirationTimeInMS: 5000,
-  onEntryEvicted: ({ key, value, isExpired }) =>
-    console.log(
-      `Entry with key ${key} and value ${value} was evicted from the cache. Expired: ${isExpired}`,
-    ),
-  onEntryMarkedAsMostRecentlyUsed: ({ key, value }) =>
-    console.log(
-      `Entry with key ${key} and value ${value} was just marked as most recently used.`,
-    ),
-});
-
-export const genBookId = (title: string) =>
-  BOOK_PREFIX +
-  title
-    .split(" ")
-    .map((t) => t[0])
-    .join("")
-    .toLocaleLowerCase();
-
-export const genCategoryId = (name: string) =>
-  CATEGORY_PREFIX + name.split(" ").join("-").toLocaleLowerCase();
-
-// Function to remove a category from all books
-const removeCategoryFromBooks = (categoryId: string) => {
-  const booksToUpdate: any[] = [];
-
-  cache.forEach((book, bookId) => {
-    if ("name" in book) return;
-
-    const updatedCategories = (book.categories ?? []).filter(
-      (category) => category.id !== categoryId,
-    );
-
-    if (updatedCategories.length !== (book.categories ?? []).length) {
-      booksToUpdate.push({
-        ...book,
-        id: bookId,
-        categories: updatedCategories,
-      });
-    }
-  });
-
-  // Update the books in the cache
-  booksToUpdate.forEach((updatedBook) => {
-    cache.set(updatedBook.id, updatedBook);
-  });
-};
-
-// Function to populate books to cache
-const populateBooksToCache = () => {
-  const cachedBooks: Book[] = [];
-  books.forEach(({ id, title, categories }) => {
-    const book = { id, title, categories };
-    cache.set(id, book);
-    cachedBooks.push(book);
-  });
-  return cachedBooks;
-};
-
-// Function to populate categories to cache
-const populateCategoriesToCache = () => {
-  const cachedCategories: Category[] = [];
-  categories.forEach(({ id, name }) => {
-    const category = { id, name };
-    cache.set(id, category);
-    cachedCategories.push(category);
-  });
-  return cachedCategories;
-};
+import { Book, Category } from "./data";
+import {
+  populateBooksToCache,
+  populateCategoriesToCache,
+  genCategoryId,
+  genBookId,
+  removeCategoryFromBooks,
+} from "./utils";
+import { cache } from "./cache";
 
 // Seed Data
 populateBooksToCache();
