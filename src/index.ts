@@ -33,7 +33,7 @@ type SeedData {
 }
 
 input BookFilter {
-  categoryId: String
+  categoryIds: [String]
 } 
 
 input CategoryInput {
@@ -63,7 +63,7 @@ type Mutation {
 // Resolver definitions
 type BookFilter = {
   filter: {
-    categoryId: string;
+    categoryIds: string[];
   };
 };
 
@@ -92,10 +92,13 @@ const resolvers = {
         books.push({ ...book, id });
       });
 
-      if (args.filter && args.filter.categoryId) {
-        const categoryId = genCategoryId(args.filter.categoryId);
+      console.log(args);
+
+      if (args?.filter?.categoryIds.length) {
+        const categoryIds = args.filter.categoryIds;
+
         return books.filter((book) =>
-          (book?.categories ?? []).map((c) => c.id === categoryId),
+          (book?.categories ?? []).some((c) => categoryIds.includes(c.id)),
         );
       }
 
